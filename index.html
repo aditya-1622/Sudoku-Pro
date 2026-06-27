@@ -1,73 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sudoku Pro</title>
+<html>
 
-  <link rel="stylesheet" href="style.css" />
+<head>
+    <title>Sudoku Game</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="dark">
+<body>
 
-  <div class="container">
+    <div class="container">
 
-    <h1>🧩 Sudoku Pro</h1>
+        <h1>Sudoku Game</h1>
 
-    <div class="top-bar">
+        <div class="top">
 
-      <select id="difficulty">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
 
-      <div class="info">
-        ⏱ <span id="time">00:00</span>
-      </div>
+            <p>Time: <span id="time">00:00</span></p>
 
-      <div class="info">
-        ❌ <span id="mistake">0</span>/3
-      </div>
+            <p>Mistakes: <span id="mistake">0</span>/3</p>
 
-      <div class="info">
-        🏆 <span id="bestTime">--:--</span>
-      </div>
+        </div>
 
-      <button id="themeBtn">
-        ☀ Light Mode
-      </button>
+        <div id="board"></div>
 
-    </div>
+        <div class="buttons">
+            <button id="newGame">New Game</button>
+            <button id="hint">Hint</button>
+            <button id="check">Check</button>
+        </div>
 
-    <div id="board"></div>
-
-    <div class="buttons">
-
-      <button id="newGame">🎮 New Game</button>
-
-      <button id="hint">💡 Hint</button>
-
-      <button id="check">✔ Check</button>
-
-      <button id="solve">🧠 Solve</button>
-
-      <button id="pencil">✏ Pencil</button>
+        <p id="message"></p>
 
     </div>
 
-    <p id="message"></p>
-
-  </div>
-
-  <audio
-    id="clickSound"
-    src="https://www.soundjay.com/buttons/sounds/button-16.mp3">
-  </audio>
-
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 
 </body>
+
 </html>

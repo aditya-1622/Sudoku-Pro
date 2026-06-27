@@ -1,418 +1,260 @@
 const boardEl = document.getElementById("board");
 const timeEl = document.getElementById("time");
 const mistakeEl = document.getElementById("mistake");
-const bestEl = document.getElementById("bestTime");
-const msg = document.getElementById("message");
+const messageEl = document.getElementById("message");
 
 let solution = [];
 let board = [];
-let timer = null;
+let timer;
 let seconds = 0;
 let mistakes = 0;
-let pencilMode = false;
 let difficulty = "easy";
 
-/* ---------------- TIMER ---------------- */
-
 function startTimer() {
-  if (timer) return;
+    clearInterval(timer);
 
-  timer = setInterval(() => {
-    seconds++;
+    timer = setInterval(() => {
+        seconds++;
 
-    let m = Math.floor(seconds / 60);
-    let s = seconds % 60;
+        let min = Math.floor(seconds / 60);
+        let sec = seconds % 60;
 
-    timeEl.innerText =
-      String(m).padStart(2, "0") +
-      ":" +
-      String(s).padStart(2, "0");
+        timeEl.innerText =
+            String(min).padStart(2, "0") +
+            ":" +
+            String(sec).padStart(2, "0");
 
-  }, 1000);
+    }, 1000);
 }
 
 function resetTimer() {
-  clearInterval(timer);
-  timer = null;
-  seconds = 0;
-  timeEl.innerText = "00:00";
+    clearInterval(timer);
+    seconds = 0;
+    timeEl.innerText = "00:00";
 }
-
-/* ---------------- SUDOKU LOGIC ---------------- */
 
 function isValid(board, row, col, num) {
 
-  for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 9; i++) {
 
-    if (board[row][i] === num) return false;
-
-    if (board[i][col] === num) return false;
-  }
-
-  let sr = row - (row % 3);
-  let sc = col - (col % 3);
-
-  for (let i = 0; i < 3; i++) {
-
-    for (let j = 0; j < 3; j++) {
-
-      if (board[sr + i][sc + j] === num) return false;
-
+        if (board[row][i] === num) return false;
+        if (board[i][col] === num) return false;
     }
-  }
 
-  return true;
-}
+    let startRow = row - row % 3;
+    let startCol = col - col % 3;
 
-function shuffle(arr) {
+    for (let i = 0; i < 3; i++) {
 
-  for (let i = arr.length - 1; i > 0; i--) {
+        for (let j = 0; j < 3; j++) {
 
-    let j = Math.floor(Math.random() * (i + 1));
-
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-
-  return arr;
-}
-
-function solveRandom(board) {
-
-  for (let row = 0; row < 9; row++) {
-
-    for (let col = 0; col < 9; col++) {
-
-      if (board[row][col] === 0) {
-
-        let nums = shuffle([1,2,3,4,5,6,7,8,9]);
-
-        for (let num of nums) {
-
-          if (isValid(board, row, col, num)) {
-
-            board[row][col] = num;
-
-            if (solveRandom(board)) return true;
-
-            board[row][col] = 0;
-          }
+            if (board[startRow + i][startCol + j] === num) {
+                return false;
+            }
         }
-
-        return false;
-      }
     }
-  }
 
-  return true;
+    return true;
 }
 
-function generateSudoku() {
+function solve(board) {
 
-  let board =
-    Array.from({ length: 9 }, () =>
-      Array(9).fill(0)
+    for (let row = 0; row < 9; row++) {
+
+        for (let col = 0; col < 9; col++) {
+
+            if (board[row][col] === 0) {
+
+                for (let num = 1; num <= 9; num++) {
+
+                    if (isValid(board, row, col, num)) {
+
+                        board[row][col] = num;
+
+                        if (solve(board)) {
+                            return true;
+                        }
+
+                        board[row][col] = 0;
+                    }
+                }
+
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+function createPuzzle() {
+
+    let arr = Array.from(
+        { length: 9 },
+        () => Array(9).fill(0)
     );
 
-  solveRandom(board);
+    solve(arr);
 
-  return board;
-}
+    solution = JSON.parse(JSON.stringify(arr));
 
-function removeCells(board) {
+    let removeCount = 35;
 
-  let removeCount =
-    difficulty === "easy"
-      ? 35
-      : difficulty === "medium"
-      ? 45
-      : 55;
-
-  while (removeCount > 0) {
-
-    let row = Math.floor(Math.random() * 9);
-    let col = Math.floor(Math.random() * 9);
-
-    if (board[row][col] !== 0) {
-
-      board[row][col] = 0;
-
-      removeCount--;
+    if (difficulty === "medium") {
+        removeCount = 45;
     }
-  }
 
-  return board;
+    if (difficulty === "hard") {
+        removeCount = 55;
+    }
+
+    while (removeCount > 0) {
+
+        let row = Math.floor(Math.random() * 9);
+        let col = Math.floor(Math.random() * 9);
+
+        if (arr[row][col] !== 0) {
+
+            arr[row][col] = 0;
+            removeCount--;
+        }
+    }
+
+    return arr;
 }
-
-/* ---------------- CREATE BOARD ---------------- */
 
 function createBoard() {
 
-  boardEl.innerHTML = "";
+    boardEl.innerHTML = "";
 
-  mistakes = 0;
+    mistakes = 0;
+    mistakeEl.innerText = "0";
 
-  mistakeEl.innerText = "0";
+    messageEl.innerText = "";
 
-  msg.innerText = "";
+    resetTimer();
+    startTimer();
 
-  resetTimer();
-
-  solution = generateSudoku();
-
-  board =
-    JSON.parse(JSON.stringify(solution));
-
-  removeCells(board);
-
-  for (let row = 0; row < 9; row++) {
-
-    for (let col = 0; col < 9; col++) {
-
-      const cell =
-        document.createElement("input");
-
-      cell.classList.add("cell");
-
-      cell.maxLength = 1;
-
-      if (board[row][col] !== 0) {
-
-        cell.value = board[row][col];
-
-        cell.disabled = true;
-
-        cell.classList.add("fixed");
-      }
-
-      cell.addEventListener("input", () => {
-
-        startTimer();
-
-        if (pencilMode) return;
-
-        let value = parseInt(cell.value);
-
-        if (!value || value < 1 || value > 9) {
-
-          cell.value = "";
-
-          return;
-        }
-
-        if (value !== solution[row][col]) {
-
-          mistakes++;
-
-          mistakeEl.innerText = mistakes;
-
-          cell.style.background = "#ef4444";
-
-          setTimeout(() => {
-
-            cell.style.background = "";
-
-            cell.value = "";
-
-          }, 500);
-
-          if (mistakes >= 3) {
-
-            alert("Game Over!");
-
-            createBoard();
-          }
-
-        } else {
-
-          cell.style.background = "#22c55e";
-        }
-      });
-
-      boardEl.appendChild(cell);
-    }
-  }
-}
-
-/* ---------------- BUTTONS ---------------- */
-
-document
-  .getElementById("newGame")
-  .onclick = createBoard;
-
-document
-  .getElementById("difficulty")
-  .onchange = (e) => {
-
-    difficulty = e.target.value;
-
-    createBoard();
-  };
-
-document
-  .getElementById("themeBtn")
-  .onclick = () => {
-
-    document.body.classList.toggle("dark");
-
-    const btn =
-      document.getElementById("themeBtn");
-
-    btn.innerText =
-      document.body.classList.contains("dark")
-        ? "☀ Light Mode"
-        : "🌙 Dark Mode";
-  };
-
-document
-  .getElementById("pencil")
-  .onclick = () => {
-
-    pencilMode = !pencilMode;
-
-    document.getElementById(
-      "pencil"
-    ).style.background =
-      pencilMode
-        ? "#facc15"
-        : "";
-  };
-
-document
-  .getElementById("solve")
-  .onclick = () => {
-
-    const cells =
-      document.querySelectorAll(".cell");
-
-    let index = 0;
+    board = createPuzzle();
 
     for (let row = 0; row < 9; row++) {
 
-      for (let col = 0; col < 9; col++) {
+        for (let col = 0; col < 9; col++) {
 
-        cells[index++].value =
-          solution[row][col];
-      }
+            let cell = document.createElement("input");
+
+            cell.type = "text";
+            cell.maxLength = 1;
+            cell.classList.add("cell");
+
+            if (board[row][col] !== 0) {
+
+                cell.value = board[row][col];
+                cell.disabled = true;
+                cell.classList.add("fixed");
+
+            } else {
+
+                cell.addEventListener("input", () => {
+
+                    let value = parseInt(cell.value);
+
+                    if (isNaN(value) || value < 1 || value > 9) {
+                        cell.value = "";
+                        return;
+                    }
+
+                    if (value !== solution[row][col]) {
+
+                        mistakes++;
+                        mistakeEl.innerText = mistakes;
+
+                        cell.style.background = "#ffcccc";
+
+                        setTimeout(() => {
+                            cell.value = "";
+                            cell.style.background = "";
+                        }, 500);
+
+                        if (mistakes >= 3) {
+
+                            alert("Game Over!");
+                            createBoard();
+                        }
+
+                    } else {
+
+                        cell.style.background = "#ccffcc";
+                    }
+                });
+            }
+
+            boardEl.appendChild(cell);
+        }
     }
+}
 
-    msg.innerText = "Solved!";
-  };
+document.getElementById("newGame").addEventListener("click", () => {
+    createBoard();
+});
 
-document
-  .getElementById("hint")
-  .onclick = () => {
+document.getElementById("difficulty").addEventListener("change", (e) => {
+    difficulty = e.target.value;
+    createBoard();
+});
 
-    const cells =
-      [...document.querySelectorAll(".cell")];
+document.getElementById("hint").addEventListener("click", () => {
 
-    const empty =
-      cells
-        .map((cell, i) =>
-          cell.value === "" ? i : -1
-        )
-        .filter(i => i !== -1);
+    let cells = document.querySelectorAll(".cell");
+    let empty = [];
+
+    cells.forEach((cell, index) => {
+
+        if (cell.value === "") {
+            empty.push(index);
+        }
+    });
 
     if (empty.length === 0) return;
 
-    const pick =
-      empty[
-        Math.floor(
-          Math.random() * empty.length
-        )
-      ];
+    let randomIndex =
+        empty[Math.floor(Math.random() * empty.length)];
 
-    const row =
-      Math.floor(pick / 9);
+    let row = Math.floor(randomIndex / 9);
+    let col = randomIndex % 9;
 
-    const col =
-      pick % 9;
+    cells[randomIndex].value = solution[row][col];
+});
 
-    cells[pick].value =
-      solution[row][col];
-  };
+document.getElementById("check").addEventListener("click", () => {
 
-document
-  .getElementById("check")
-  .onclick = () => {
-
-    const cells =
-      document.querySelectorAll(".cell");
-
+    let cells = document.querySelectorAll(".cell");
     let index = 0;
-
-    let won = true;
+    let win = true;
 
     for (let row = 0; row < 9; row++) {
 
-      for (let col = 0; col < 9; col++) {
+        for (let col = 0; col < 9; col++) {
 
-        if (
-          parseInt(cells[index++].value)
-          !== solution[row][col]
-        ) {
+            let value = parseInt(cells[index].value);
 
-          won = false;
+            if (value !== solution[row][col]) {
+                win = false;
+            }
+
+            index++;
         }
-      }
     }
 
-    if (won) {
+    if (win) {
 
-      msg.innerText =
-        "🎉 Congratulations! You Won!";
-
-      clearInterval(timer);
-
-      confetti();
-
-      const best =
-        localStorage.getItem("best");
-
-      if (
-        !best ||
-        seconds < parseInt(best)
-      ) {
-
-        localStorage.setItem(
-          "best",
-          seconds
-        );
-
-        loadBest();
-      }
+        clearInterval(timer);
+        messageEl.innerText = "You Won!";
 
     } else {
 
-      msg.innerText =
-        "❌ Puzzle not solved yet!";
+        messageEl.innerText = "Puzzle is not complete.";
     }
-  };
-
-/* ---------------- BEST TIME ---------------- */
-
-function loadBest() {
-
-  let best =
-    localStorage.getItem("best");
-
-  if (!best) return;
-
-  best = parseInt(best);
-
-  let m =
-    Math.floor(best / 60);
-
-  let s =
-    best % 60;
-
-  bestEl.innerText =
-    String(m).padStart(2, "0") +
-    ":" +
-    String(s).padStart(2, "0");
-}
-
-/* ---------------- START ---------------- */
-
-loadBest();
+});
 
 createBoard();
